@@ -23,7 +23,8 @@ int RAND_NUM = 0;
 // - Limit of buffer (int)
 // Output:- Buffer (char*)
 // Purpose: Copy buffer from User memory space to System memory space
-char *User2System(int virtAddr, int limit) {
+char *User2System(int virtAddr, int limit)
+{
     int i; // index
     int oneChar;
     char *kernelBuf = NULL;
@@ -34,7 +35,8 @@ char *User2System(int virtAddr, int limit) {
     memset(kernelBuf, 0, limit + 1);
     // printf("\n Filename u2s: ");
 
-    for (i = 0; i < limit; i++) {
+    for (i = 0; i < limit; i++)
+    {
         kernel->machine->ReadMem(virtAddr + i, 1, &oneChar);
         kernelBuf[i] = (char)oneChar;
         // printf("%c", kernelBuf[i])
@@ -49,12 +51,14 @@ char *User2System(int virtAddr, int limit) {
 // - Buffer (char[])
 // Output:- Number of bytes copied (int)
 // Purpose: Copy buffer from System memory space to User memory space
-int System2User(int virtAddr, char *buffer, int len) {
+int System2User(int virtAddr, char *buffer, int len)
+{
     if (len <= 0)
         return len;
     int i = 0;
     int oneChar = 0;
-    do {
+    do
+    {
         oneChar = (int)buffer[i];
         kernel->machine->WriteMem(virtAddr + i, 1, oneChar);
         i++;
@@ -76,38 +80,46 @@ void IncreasePC()
 }
 // -------------------------------------------------------------------
 
-void SysHalt() {
+void SysHalt()
+{
     kernel->interrupt->Halt();
 }
 
-int SysAdd(int op1, int op2) {
+int SysAdd(int op1, int op2)
+{
     return op1 + op2;
 }
 
-int SysSub(int op1, int op2) {
+int SysSub(int op1, int op2)
+{
     return op1 - op2;
 }
 
-void SysReadChar() {
+void SysReadChar()
+{
     char firstChar;
     firstChar = kernel->synchConsoleIn->GetChar();
     while (firstChar != '\n' && kernel->synchConsoleIn->GetChar() != '\n')
         ;
     kernel->machine->WriteRegister(2, firstChar);
 }
-void SysPrintChar() {
+void SysPrintChar()
+{
     char _char = (char)kernel->machine->ReadRegister(4);
     kernel->synchConsole_Write(&_char, 1);
 }
 
-void SysReadString() {
+void SysReadString()
+{
     char *buffer = new char[MAXLENGTH + 1];
     if (!buffer)
         return;
     int i = 0;
     char ch;
-    while (i < MAXLENGTH) {
-        do {
+    while (i < MAXLENGTH)
+    {
+        do
+        {
             ch = kernel->synchConsoleIn->GetChar();
         } while (ch == EOF);
         if (ch == '\0' || ch == '\n') // enter -> ket thuc nhap
@@ -119,26 +131,162 @@ void SysReadString() {
     //         ;
     // }
     int ptr = kernel->machine->ReadRegister(4);
-    if (buffer) {
+    if (buffer)
+    {
         System2User(ptr, buffer, MAXLENGTH);
         delete[] buffer;
     }
 }
-void SysPrintString() {
+void SysPrintString()
+{
     int i = 0;
     int ptr = kernel->machine->ReadRegister(4);
     char *buffer = User2System(ptr, MAXLENGTH);
-    while (buffer[i] != '\0') {
+    while (buffer[i] != '\0')
+    {
         kernel->synchConsoleOut->PutChar(buffer[i++]);
     }
 }
 
 // https://en.wikipedia.org/wiki/Linear_congruential_generator
 
-void SysRandomNum() {
+void SysRandomNum()
+{
     int seed = kernel->stats->totalTicks;
     RAND_NUM = (RAND_NUM * seed + CONST_C) % MODULUS;
     kernel->machine->WriteRegister(2, RAND_NUM);
+}
+
+void SysReadNum()
+{
+    /*Input: NULL
+    Output: số nguyên Int
+    CN: Đọc số nguyên từ bàn phím
+    */
+    char *buffer = new char[MAXLENGTH + 1];
+    if (!buffer)
+        return;
+    int i = 0;
+    char ch;
+    while (i < MAXLENGTH)
+    {
+        do
+        {
+            ch = kernel->synchConsoleIn->GetChar();
+        } while (ch == EOF);
+        if (ch == '\0' || ch == '\n') // enter -> ket thuc nhap
+            break;
+        buffer[i++] = ch;
+    }
+    bool isInt = true;
+    bool isNegative = false;
+    int result = 0;
+    // Kiểm tra số nhập vào có phải là số âm hay không     
+    // Kiểm tra tràn số
+    if (buffer[0] == '-')
+    {
+        isNegative = true;
+        i = 1;
+        if (strlen(buffer) > 11)
+        {
+            isInt = false;
+        }
+        if (strcmp(buffer,"-2147483647")>0)
+        {
+            isInt=false;
+        }
+    }
+    else
+    {
+        isNegative = false;
+        i = 0;
+        if (strlen(buffer) > 10)
+        {
+            isInt = false;
+        }
+        if (strcmp(buffer,"2147483647")>0)
+        {
+            isInt=false;
+        }
+    }
+    // Kiểm tra các kí tự nhập vào có phải số hay không
+    while (buffer[i] != '\0')
+    {
+        if (buffer[i] < 48 || buffer[i] > 57)
+        {
+            isInt = false;
+            break;
+        }
+        i++;
+    }
+    int num = 0;
+    // chuyển chuỗi thành số
+    if (isInt)
+    {
+        i = 0;
+        if (isNegative)
+        {
+            i = 1;
+        }
+        while (buffer[i] != '\0')
+        {
+            num = num * 10 + int(buffer[i]) - '0';
+            i++;
+        }
+        if (isNegative)
+        {
+            num = -num;
+        }
+        result = num;
+    }
+    else
+    {
+        result = 0;
+    }
+    kernel->machine->WriteRegister(2, result);
+}
+
+void SysPrintNum()
+{
+    /*Input: số nguyên Int
+    Output: NULL
+    CN: In một số nguyên ra màn hình
+    */
+    bool isNegative = false;
+    int so = kernel->machine->ReadRegister(4);
+    int i = 0;
+    char *buffer = new char[MAXLENGTH + 1];
+    if (so != 0)
+    {
+        if (so < 0)
+        {
+            isNegative = true;
+            so = -so;
+        }
+        int chuso = 0;
+        while (so != 0)
+        {
+            chuso = so % 10;
+            buffer[i] = chuso + '0';
+            so = so / 10;
+            i++;
+        }
+        if (isNegative)
+        {
+            buffer[i] = '-';
+            i++;
+        }
+    }
+    else
+    {
+        buffer[i] = '0';
+        i++;
+    }
+    buffer[i] = '\0';
+    while (i >= 0)
+    {
+        kernel->synchConsoleOut->PutChar(buffer[i--]);
+    }
 }
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */

@@ -198,6 +198,14 @@ void ExceptionHandler(ExceptionType which) {
             SysRandomNum();
             break;
         }
+        case SC_ReadNum:{
+            SysReadNum();
+            break;
+        }
+        case SC_PrintNum:{
+            SysPrintNum();
+            break;
+        }
 
         default:
             cerr << "Unexpected system call " << type << "\n";
