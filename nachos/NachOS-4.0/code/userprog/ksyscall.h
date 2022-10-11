@@ -168,6 +168,9 @@ void SysReadNum()
         return;
     int i = 0;
     char ch;
+    bool isInt = true;
+    bool isNegative = false;
+    int result = 0;
     while (i < MAXLENGTH)
     {
         do
@@ -178,10 +181,7 @@ void SysReadNum()
             break;
         buffer[i++] = ch;
     }
-    bool isInt = true;
-    bool isNegative = false;
-    int result = 0;
-    // Kiểm tra số nhập vào có phải là số âm hay không     
+    // Kiểm tra số nhập vào có phải là số âm hay không
     // Kiểm tra tràn số
     if (buffer[0] == '-')
     {
@@ -191,9 +191,26 @@ void SysReadNum()
         {
             isInt = false;
         }
-        if (strcmp(buffer,"-2147483647")>0)
+        if (isInt)
         {
-            isInt=false;
+            char *temp = new char[11 + 1];
+            int j=0;
+            for(j=0;j<11;j++)
+            {
+                temp[j]=0;
+            }
+            j = strlen(buffer);
+            while (j>0)
+            {
+                temp[j+i-strlen(buffer)] = buffer[j];
+                j--;
+            }
+            temp[0]='-';
+            if (strcmp(temp, "-2147483647") > 0)
+            {
+                isInt = false;
+            }
+            //delete[] temp;
         }
     }
     else
@@ -204,9 +221,25 @@ void SysReadNum()
         {
             isInt = false;
         }
-        if (strcmp(buffer,"2147483647")>0)
+        if (isInt)
         {
-            isInt=false;
+            char *temp = new char[10 + 1];
+            int j=0;
+            for(j=0;j<10;j++)
+            {
+                temp[j]=0;
+            }
+            j = strlen(buffer);
+            while (j>=0)
+            {
+                temp[j+i-strlen(buffer)] = buffer[j];
+                j--;
+            }
+            if (strcmp(temp, "2147483647") > 0)
+            {
+                isInt = false;
+            }
+            //delete[] temp;
         }
     }
     // Kiểm tra các kí tự nhập vào có phải số hay không
