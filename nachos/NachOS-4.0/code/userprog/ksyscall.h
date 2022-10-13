@@ -24,6 +24,10 @@
 #define MAXLENGTH 256
 #define MODULUS 2147483647
 #define CONST_C 16807
+#define INT_MIN (-2147483647 - 1)
+
+bool FIRSTRAND = true;
+
 int RAND_NUM = 0;
 
 // Input: - User space address (int)
@@ -120,11 +124,11 @@ void SysPrintChar()
     kernel->synchConsoleOut->PutChar(ch);
 }
 
-void SysReadString()
+void SysReadString(int length)
 {
-    // Tạo chuỗi ký tự buffer
-    char *buffer = new char[MAXLENGTH + 1];
+     // Tạo chuỗi ký tự buffer
 
+    char *buffer = new char[length + 1];
     // Nếu buffer == NULL thì kết thúc (Do không đủ vùng nhớ để tạo)
     if (!buffer)
         return;
@@ -134,33 +138,39 @@ void SysReadString()
     // Biến ch có kiểu char
     char ch;
 
-    // Dùng vòng lặp để đọc chuỗi ký tự nhập vào 
-    while (i < MAXLENGTH)
-    {
-        do
-        {
+    // Dùng vòng lặp để đọc chuỗi ký tự nhập vào
+    while (i < length) {
+        do {
             // Nhận ký tự từ system
             ch = kernel->synchConsoleIn->GetChar();
         } while (ch == EOF);
         // Khi nhập: Enter -> ket thuc nhap
-        if (ch == '\0' || ch == '\n') 
+        if (ch == '\0' || ch == '\n') {
+            buffer[i] = '\0';
             break;
-        
+        }
+
         // Lưu ký tự vào chuỗi ký tự buffer
         buffer[i++] = ch;
     }
 
+    // kiểm soát trường hợp tràn buffer;
+    if (ch != '\0' && ch != '\n') {
+        while (true) {
+            ch = kernel->synchConsoleIn->GetChar();
+            if (ch == '\0' || ch == '\n')
+                break;
+        }
+    }
+
     // Gọi ptr là value của reg4
     int ptr = kernel->machine->ReadRegister(4);
-    if (buffer)
-    {
-        // Chuyển dữ liệu vùng nhớ buffer từ hệ thống (system) sang giao diện người dùng (user)
-        // Với virAdd = ptr (giá trị reg4)
-        //     buffer = buffer (dữ liệu của buffer từ system sẽ chuyển thành buffer của user)
-        //     len = MAXLENGTH (Độ dài của buffer là MAXLENGTH)
-        System2User(ptr, buffer, MAXLENGTH);
-        delete[] buffer;
-    }
+    // Chuyển dữ liệu vùng nhớ buffer từ hệ thống (system) sang giao diện người dùng (user)
+    // Với virAdd = ptr (giá trị reg4)
+    //     buffer = buffer (dữ liệu của buffer từ system sẽ chuyển thành buffer của user)
+    //     len = MAXLENGTH (Độ dài của buffer là MAXLENGTH)
+    System2User(ptr, buffer, length);
+    delete[] buffer;
 }
 
 void SysPrintString()
@@ -187,7 +197,14 @@ void SysPrintString()
 void SysRandomNum()
 {
     int seed = kernel->stats->totalTicks;
+    if (FIRSTRAND) {
+        RAND_NUM = seed;
+        FIRSTRAND = false;
+    }
     RAND_NUM = (RAND_NUM * seed + CONST_C) % MODULUS;
+    if (RAND_NUM < 0) {
+        RAND_NUM = -(RAND_NUM);
+    }
     kernel->machine->WriteRegister(2, RAND_NUM);
 }
 
@@ -230,6 +247,15 @@ void SysReadNum()
         
         // Lưu ký tự vào chuỗi ký tự buffer
         buffer[i++] = ch;
+    }
+
+    // xoá bớt kí tự trắng ở đầu (nếu có)
+    while (buffer[0] == ' ') {
+        int n = strlen(buffer);
+        for (int j = 0; j < n - 1; j++) {
+            buffer[j] = buffer[j + 1];
+        }
+        buffer[n - 1] = '\0';
     }
 
     // Kiểm tra số nhập vào có phải là số âm hay không     
@@ -289,16 +315,19 @@ void SysReadNum()
                 isInt = false;            
         }
     }
+    
     // Kiểm tra các kí tự nhập vào có phải số hay không
-    while (buffer[i] != '\0')
-    {
-        if (buffer[i] < 48 || buffer[i] > 57)
+    if (isInt) {
+        while (buffer[i] != '\0')
         {
-            // Không phải là ký tự số
-            isInt = false;
-            break;
+            if (buffer[i] < 48 || buffer[i] > 57)
+            {
+                // Không phải là ký tự số
+                isInt = false;
+                break;
+            }
+            i++;
         }
-        i++;
     }
 
     int num = 0;
@@ -336,57 +365,51 @@ void SysPrintNum()
     */
     // Kiểm tra số -
     bool isNegative = false;
-
     // Đọc number từ reg4
     int number = kernel->machine->ReadRegister(4);
-
     // Vị trí (index) 
     int i = 0;
     // Chuỗi ký tự (buffer)
-    char *buffer = new char[MAXLENGTH + 1];
+    char *buffer = new char[12 + 1];
 
     // Kiểm tra number có = 0 hay không 
     // Nếu number != 0:
-    if (number != 0)
-    {
-        // Xét trường hợp số -
-        if (number < 0) {
-            isNegative = true;
-            number = -number;
-        }
-
-        // Gọi num là từng số hạng trong number
-        int num = 0;
-        while (number != 0)
-        {
-            // Lấy từng số hạng trong number
-            num = number % 10;
-            
-            // Đưa từng số hạng của number vào buffer
-            buffer[i] = num + '0';
-            number /= 10;
-            i++;
-        }
-
-        // Nếu number là số -
-        if (isNegative) {
-            // Lấy dấu '-' đưa vào vị trí cuối của buffer
-            buffer[i] = '-';
-            i++;
+    if (number == INT_MIN) {
+        strcpy(buffer, "-2147483648");
+        buffer[strlen(buffer)] = '\0';
+        i = 0;
+        while (buffer[i] != '\0') {
+            kernel->synchConsoleOut->PutChar(buffer[i++]);
         }
     }
     else {
-        // Nếu number = 0 thì mỗi ký tự của buffer = '0'
-        buffer[i] = '0';
-        i++;
+        if (number != 0) {
+            if (number < 0) {
+                isNegative = true;
+                number = -number;
+            }
+            int num = 0;
+            while (number != 0) {
+                num = number % 10;
+                buffer[i] = num + '0';
+                number = number / 10;
+                i++;
+            }
+            if (isNegative) {
+                buffer[i] = '-';
+                i++;
+            }
+        }
+        else {
+            buffer[i] = '0';
+            i++;
+        }
+        buffer[i] = '\0';
+        while (i >= 0) {
+            kernel->synchConsoleOut->PutChar(buffer[i--]);
+        }
     }
-
-    // buffer ở cuối sẽ = '\0' (OEF)
-    buffer[i] = '\0';
-    // Đọc ngược chuỗi ký tự buffer rồi đưa lên system
-    while (i >= 0) {
-        kernel->synchConsoleOut->PutChar(buffer[i--]);
-    }
+    delete[] buffer;
 }
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */
