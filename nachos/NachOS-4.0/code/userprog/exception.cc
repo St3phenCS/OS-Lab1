@@ -185,7 +185,7 @@ void ExceptionHandler(ExceptionType which) {
                 Output	: Chuỗi ký tự (char*)
                 Used	: Đọc 1 chuỗi ký tự từ người dùng nhập vào
             */
-                       // lấy độ dài chuổi cần đọc tức là giá trị của arg 2
+            // lấy độ dài chuổi cần đọc tức là giá trị của arg 2
             int length = kernel->machine->ReadRegister(5);
             // printf("do dai chuoi vua nhap %d", length);
             if (length > MAXLENGTH || length < 1) {
