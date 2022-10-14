@@ -26,8 +26,8 @@
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
-// define các System Call
 
+// define các System Call
 // Syscall Halt
 #define SC_Halt 0
 // Syscall cho các thao tác
@@ -86,12 +86,12 @@ int Sub(int op1, int op2);
 char ReadChar();
 void PrintChar(char character);
 
-void ReadString(char[]);
+void ReadString(char[], int length);
 void PrintString(char[]);
 
 int ReadNum();
 void PrintNum(int number);
-unsigned int RandomNum();
+int RandomNum();
 
 /* Address space control operations: Exit, Exec, Execv, and Join */
 

@@ -194,6 +194,10 @@ void ExceptionHandler(ExceptionType which) {
             else {
                 SysReadString(length);
             }
+<<<<<<< HEAD
+=======
+
+>>>>>>> f00dda264fdde853bb245cac11b0388df97d2fc8
             break;
         }
         case SC_PrintString: {
@@ -214,7 +218,7 @@ void ExceptionHandler(ExceptionType which) {
             SysRandomNum();
             break;
         }
-        case SC_ReadNum:{
+        case SC_ReadNum: {
             /*
                 Input	: NULL
                 Output	: Number
