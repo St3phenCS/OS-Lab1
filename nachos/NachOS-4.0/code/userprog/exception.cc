@@ -194,10 +194,6 @@ void ExceptionHandler(ExceptionType which) {
             else {
                 SysReadString(length);
             }
-<<<<<<< HEAD
-=======
-
->>>>>>> f00dda264fdde853bb245cac11b0388df97d2fc8
             break;
         }
         case SC_PrintString: {

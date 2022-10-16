@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort sub createfile readchar bubblesort ascii help
+PROGRAMS = add halt shell matmult sort sub createfile char bubblesort string num ascii help random clean
 endif
 
 all: $(PROGRAMS)
@@ -168,17 +168,30 @@ createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	$(COFF2NOFF) createfile.coff createfile
 
-readchar.o: readchar.c
-	$(CC) $(CFLAGS) -c readchar.c
-readchar: readchar.o start.o
-	$(LD) $(LDFLAGS) start.o readchar.o -o readchar.coff
-	$(COFF2NOFF) readchar.coff readchar
+char.o: char.c
+	$(CC) $(CFLAGS) -c char.c
+char: char.o start.o
+	$(LD) $(LDFLAGS) start.o char.o -o char.coff
+	$(COFF2NOFF) char.coff char
 
 bubblesort.o: bubblesort.c
 	$(CC) $(CFLAGS) -c bubblesort.c
 bubblesort: bubblesort.o start.o
 	$(LD) $(LDFLAGS) start.o bubblesort.o -o bubblesort.coff
 	$(COFF2NOFF) bubblesort.coff bubblesort
+
+
+string.o: string.c
+	$(CC) $(CFLAGS) -c string.c
+string: string.o start.o
+	$(LD) $(LDFLAGS) start.o string.o -o string.coff
+	$(COFF2NOFF) string.coff string
+
+num.o: num.c
+	$(CC) $(CFLAGS) -c num.c
+num: num.o start.o
+	$(LD) $(LDFLAGS) start.o num.o -o num.coff
+	$(COFF2NOFF) num.coff num
 
 ascii.o: ascii.c
 	$(CC) $(CFLAGS) -c ascii.c
@@ -188,11 +201,17 @@ ascii: ascii.o start.o
 
 help.o: help.c
 	$(CC) $(CFLAGS) -c help.c
-help: help.o help.o
+help: help.o start.o
 	$(LD) $(LDFLAGS) start.o help.o -o help.coff
 	$(COFF2NOFF) help.coff help
 
-clean:
+random.o: random.c
+	$(CC) $(CFLAGS) -c random.c
+random: random.o start.o
+	$(LD) $(LDFLAGS) start.o random.o -o random.coff
+	$(COFF2NOFF) random.coff random
+
+clean: 
 	$(RM) -f *.o *.ii
 	$(RM) -f *.coff
 
